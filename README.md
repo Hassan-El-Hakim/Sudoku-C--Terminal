@@ -16,17 +16,6 @@ A fully interactive Sudoku game built using C++, running in the terminal. Includ
 
 ---
 
-## 🛠️ Technologies Used
+##  How to Run
 
-- C++  
-- `<conio.h>` for real-time keyboard input  
-- `<ctime>`, `<cstdlib>` for randomization  
-- `<cstring>`, `<iomanip>`, `<iostream>` for UI and logic
-
----
-
-## 🚀 How to Run
-
-1. **Clone this repo:**
-   ```bash
-   git clone https://github.com/Hassan-El-Hakim/Event-Management-JavaFx-.git
+1. Run the code in 'Sudoku Game code' in and suitable IDE like VS code
