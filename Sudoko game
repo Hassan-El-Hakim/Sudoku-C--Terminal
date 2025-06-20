@@ -1,0 +1,506 @@
+#include <iostream>
+#include <iomanip>
+#include <ctime>
+#include <cstdlib>
+#include <conio.h>
+#include <cstring>
+
+using namespace std;
+struct Data // struct of data of users
+{
+    string name;
+    int score;
+};
+Data player[50];
+int counter = 0;
+
+void ClearScreen()//function to clear screen
+{
+    system("cls"); 
+}
+
+void GenerateBoard(int Board[9][9], bool fixed[9][9], int save[9][9])// function to genrate the boards needed
+{
+    for (int i = 0; i < 9; i++)
+    {
+        for (int j = 0; j < 9; j++)
+        {
+            Board[i][j] = 0;
+            save[i][j] = 0;
+        }
+    }
+    Board[0][0] = { 1 + rand() % 9 };// randmoize first number in board between 1 and 9
+    for (int i = 0; i < 9; i++)
+    {
+        for (int j = 0; j < 9; j++)
+        {
+            fixed[i][j] = false;
+        }
+    }
+}
+
+
+bool isValid(int board[9][9], int row, int col, int num)// Function to check if number is correct in sduko logic
+{
+    for (int i = 0; i < 9; i++) {
+        if (board[row][i] == num || board[i][col] == num) return false; // Check row and column
+    }
+
+    int startRow = row / 3 * 3, startCol = col / 3 * 3;// Check the 3x3 boc thge number is in
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            if (board[startRow + i][startCol + j] == num) return false;
+        }
+    }
+    return true;
+}
+
+bool BoardSolver(int Board[9][9])//function to solve board the boards fully
+
+{
+    for (int row = 0; row < 9; row++)
+    {
+        for (int col = 0; col < 9; col++)
+        {
+            if (Board[row][col] == 0)
+            {
+                for (int num = 1; num <= 9; num++)
+                {
+                    if (isValid(Board, row, col, num))
+                    {
+                        Board[row][col] = num;
+
+                        if (BoardSolver(Board))
+                            return true;
+
+                        Board[row][col] = 0; // Backtrack
+                    }
+                }
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+// Function to remove numbers randomly according to diffculty and leaves them to the user to solve
+void RemoveNumbersAndFix(int Board[9][9], int save[9][9], int numtoremove, bool fixed[9][9], int round)
+{
+    while (numtoremove > 0)
+    {
+        int row = rand() % 9;
+        int col = rand() % 9;
+
+        if (Board[row][col] != 0)
+        {
+            Board[row][col] = 0;
+            numtoremove--;
+        }
+        for (int i = 0; i < 9; i++) {
+            for (int j = 0; j < 9; j++) {
+                save[i][j] = Board[i][j]; // saves a copy from the board to restart it when needed
+            }
+        }
+    }
+    for (int i = 0; i < 9; i++)
+    {
+        for (int j = 0; j < 9; j++)
+        {
+            if (Board[i][j] != 0)
+                fixed[i][j] = true;
+        }
+    }
+}
+
+void restartboard(int board[9][9], int save[9][9])// function to reseating the values of the board on losing
+{
+    for (int i = 0; i < 9; i++) {
+        for (int j = 0; j < 9; j++) {
+            board[i][j] = save[i][j];
+        }
+    }
+}
+
+// Function to print the Sudoku board with the cursor
+void PrintBoard(int board[9][9], int cursorRow, int cursorCol, int strikes)
+{
+    ClearScreen();
+    cout << "Strikes: ";// Display strikes(lives)
+    for (int i = 0; i < strikes; i++)
+    {
+        cout << "[+] ";
+    }
+    cout << endl;
+    cout << "Use arrow keys to move, Enter to select, or 'Q' to quit.\n";
+    cout << "Selected cell: Row " << cursorRow + 1 << ", Column " << cursorCol + 1 << "\n\n";
+
+    for (int i = 0; i < 9; i++)
+    {
+        for (int j = 0; j < 9; j++)
+        {
+            if (j == 3 || j == 6) cout << " | "; //vertical grid lines
+
+            if (i == cursorRow && j == cursorCol)// Highlight the cursor position
+            {
+                if (board[i][j] == 0) {
+                    cout << "[ ] ";
+                }
+                else {
+                    cout << "[" << board[i][j] << "] ";
+                }
+            }
+            else {
+                if (board[i][j] == 0)
+                {
+                    cout << " .  "; //puts any zero in board as dot
+                }
+                else {
+                    cout << " " << board[i][j] << "  ";
+                }
+            }
+        }
+        cout << endl;
+        if (i == 2 || i == 5)
+        {
+            cout << "------------------------------------------\n"; //horizontal grid lines
+        }
+    }
+}
+
+
+// function for the main game itself
+void PlaySudoku(int board[9][9], int save[9][9], bool fixed[9][9], int presetvalues, int numtoremove, int round)
+{
+Restart:
+    int cursorRow = 0, cursorCol = 0;
+    int score = 0;
+    int strikes = 3;
+    int ReturnToMain, NextLevel;
+    bool GameWon = false;
+
+    while (true)
+    {
+        ClearScreen();
+        PrintBoard(board, cursorRow, cursorCol, strikes);
+
+        
+        cout << "Score: " << score << "\n";// Display the score
+
+        char ch = _getch();// Get user input
+        if (ch == 'q' || ch == 'Q')
+        {   
+            int score2=0;
+            if(round==1){
+                score2=255;// if user enters second board he has at least 225 in score
+            }
+            player[counter].score= score2 + score;
+            counter++;
+            cout << "\nExiting the game. Goodbye!\n";
+            cout << "\nTo return to the Main Menu, please press (1)\n";
+            cin >> ReturnToMain;
+
+            if (ReturnToMain == 1)
+            {
+                ClearScreen();
+                return;
+            }
+            else
+            {
+                do
+                {
+                    cout << "Invalid input. To return to the Main Menu, please press (1)";
+                    cin >> ReturnToMain;
+                    if (ReturnToMain == 1)
+                    {
+                        ClearScreen();
+                        return;
+                    }
+                } while (ReturnToMain != 1);
+            }
+        }
+
+        if (ch == 0 || ch == -32){ // Asscii for limits every input user can put including arrows and enter
+            ch = _getch();
+            switch (ch)
+            {
+            case 72: //Asscii for Up arrow
+                if (cursorRow > 0) cursorRow--;
+                break;
+            case 80: //Asscii for Down arrow
+                if (cursorRow < 8) cursorRow++;
+                break;
+            case 75: //Asscii for Left arrow
+                if (cursorCol > 0) cursorCol--;
+                break;
+            case 77: //Asscii for Right arrow
+                if (cursorCol < 8) cursorCol++;
+                break;
+            }
+        }
+        else if (ch == 13)
+        { // Enter key
+            ClearScreen();
+            PrintBoard(board, cursorRow, cursorCol, strikes);
+            if (fixed[cursorRow][cursorCol])
+            { // Check if the cell can't be modfied by user (fixed on the board)
+                cout << "Cannot modify this cell. Press any key to continue.";
+                _getch();
+                continue;
+            }
+            cout << "\nEnter a number (1-9) to place in the selected cell and '0' to clear the cell to enter a new number: ";
+            int num;
+            cin >> num;
+
+            if (num == 0)
+            {
+                board[cursorRow][cursorCol] = 0; // Clears the cell
+                score -= 5;// decreases score on clearing a cell
+            }
+            else if (num < 1 || num > 9)
+            {
+                cout << "Invalid number. Press any key to continue.";
+                _getch();
+            }
+            else if (isValid(board, cursorRow, cursorCol, num))
+            {
+                board[cursorRow][cursorCol] = num; // Place the number
+                score += 5; // Increase the score for a correct input
+            }
+            else
+            {
+                strikes--;// decreases lives on losing
+                cout << "Invalid move! Press any key to continue.";
+                _getch();
+            }
+
+            if (strikes == 0)
+            {
+                cout << "\nYOU LOST! TRY AGAIN.\n";
+                _getch();
+                ClearScreen();
+                restartboard(board, save);
+                goto Restart;
+            }
+        }
+
+        if (score == (numtoremove * 5))
+        {
+            cout << "\nCONGRATULATIONS YOU HAVE PASSED.\n\n";
+            if(round==1){
+                score=330;// if user wins second board it sets his score to 330
+                player[counter].score=score;
+                counter++;
+            }
+            round++;
+            GameWon = true;
+            _getch();
+            ClearScreen();
+            break;
+        }
+    }
+
+    if (GameWon == true)
+    {
+        int Board2[9][9];// board that the user deals with
+        bool fixed2[9][9];// fixed board that stores where the numvers that the user can't change is at
+        int save2[9][9];// function that stores values of board to restart it when needed
+
+        if (round < 2)
+        {
+            cout << "To move to the next level, please press (1) ";
+            cin >> NextLevel;
+
+            if (NextLevel == 1)
+            {
+                ClearScreen();
+                presetvalues = 15;
+                numtoremove = 66;
+                GenerateBoard(Board2, fixed2, save2);
+                BoardSolver(Board2);
+                RemoveNumbersAndFix(Board2, save2, numtoremove, fixed2, round);
+                PlaySudoku(Board2, save2, fixed2, presetvalues, numtoremove, round);
+            }
+            else
+            {
+                do
+                {
+                    cout << "Invalid input. To go to the next level, please press (1) ";
+                    cin >> NextLevel;
+                    if (NextLevel == 1)
+                    {
+                        (player[counter].score)=(player[counter].score)+score;
+                        if(round==1){
+                        counter++;
+                        }
+
+                        ClearScreen();
+                        presetvalues = 15;// next level diffculty on winning the first board
+                        numtoremove = 66;
+
+                        GenerateBoard(Board2, fixed2, save2);
+                        BoardSolver(Board2);
+                        RemoveNumbersAndFix(Board2, save2, numtoremove, fixed2, round);
+                        PlaySudoku(Board2, save2, fixed2, presetvalues, numtoremove, round);
+                    }
+                } while (NextLevel != 1);
+            }
+        }
+    }
+}
+
+void scoreboard(Data player[50],int counter);
+
+// Function that puts the user in the Main Menu and enables him to start the game
+void MainMenu()
+{
+    //Data player[50];
+    char names[50];
+    int Exit, PresetValues, NumToRemove, Option;
+    int Round = 0;
+    char Username[100];
+
+    cout << setw(95) << " #######  ##   ##  #######     ########   ##     #   ########    \n";
+    cout << setw(95) << " ##       ##   ##  ##     ##   ##    ##   ##   ##    ##    ##    \n";
+    cout << setw(95) << " #######  ##   ##  ##       #  ##    ##   #####      ##    ##    \n";
+    cout << setw(95) << "      ##  ##   ##  ##     ##   ##    ##   ##   ##    ##    ##    \n";
+    cout << setw(95) << " #######  #######  #######     ########   ##     #   ########    \n";
+    cout << "\n\n";
+
+    cout << "PLAY GAME    (1)" << endl << endl;
+    cout << "INSTRUCTIONS (2)" << endl << endl;
+    cout << "LEADERBOARD  (3)" << endl << endl;
+    cout << "EXIT GAME    (4)" << endl << endl;
+    cout << "Developed by: Hassan , Habiba , Marwan , Mostafa , Malak" << endl << endl;
+
+    cin >> Option;
+
+    if (Option == 1)
+    {
+        ClearScreen();
+
+        cout << "Please enter your name (it must end with '.' before pressing enter): ";
+        cin.getline(names, 100, '.');
+        player[counter].name = names;
+
+        ClearScreen();
+
+        int PresetValues = 30; // Starts off with Easy Difficulty
+        int NumToRemove = 51;
+
+        int Board1[9][9];
+        bool fixed1[9][9];
+        int save1[9][9];
+
+        GenerateBoard(Board1, fixed1, save1);
+
+        BoardSolver(Board1);
+
+        RemoveNumbersAndFix(Board1, save1, NumToRemove, fixed1, Round);
+
+        PlaySudoku(Board1, save1, fixed1, PresetValues, NumToRemove, Round);
+    }
+
+    else if (Option == 2)
+    {
+        ClearScreen();
+
+        cout << "1. The goal is to fill the grid with numbers 1-9.\n\n";
+        cout << "2. Each row, column, and 3x3 subgrid must contain the numbers 1 through 9 without repetition.\n\n";
+        cout << "3. Use the arrow keys to move around the board.\n\n";
+        cout << "4. Use the numbers 1-9 to place values.\n\n";
+        cout << endl << endl << "To exit, Press (1) ";
+
+        cin >> Exit;
+
+        if (Exit == 1)
+        {
+            ClearScreen();
+
+            MainMenu();
+        }
+        else
+        {
+            do
+            {
+                cout << "Invalid Input. Please enter (1) to exit ";
+                cin >> Exit;
+                if (Exit == 1)
+                {
+                    ClearScreen();
+
+                    MainMenu();
+                }
+            } while (Exit != 1);
+        }
+
+    }
+
+    else if (Option == 3)
+    {
+        ClearScreen();
+        scoreboard(player,counter);
+    }
+
+    else if (Option == 4)
+    {
+        cout << endl << "Thank You for Playing";
+        exit(0);
+    }
+
+}
+
+void scoreboard(Data player[], int counter)
+{
+    Data store;
+    for (int i = 0; i < counter -1; i++) // sorting player descendinglly according to their score
+    {
+        for (int j = 0; j < counter - 1; j++)
+        {
+            if (player[j].score < player[j + 1].score)
+            {
+                store = player[j];
+                player[j] = player[j + 1];
+                player[j+1]=store;
+            }
+        }
+    }
+
+    cout<<"------------------------scoreboard------------------------"<<endl;
+    for(int i=0 ;i<counter;i++){ // prints the players with their score
+        cout<<player[i].name<<"    "<<player[i].score<<endl;
+    }
+    cout<<"press 'q' to return";
+    char back = getch();
+    if (back == 'q'||'Q')
+        {
+            ClearScreen();
+
+            MainMenu();
+        }
+        else
+        {
+            do
+            {
+                cout << "Invalid Input. Please enter (q) to exit ";
+                getch();
+                if (back == 'q'||'Q')
+                {
+                    ClearScreen();
+
+                    MainMenu();
+                }
+            } while (back != 'q'||'Q');
+        }
+}
+
+int main()
+{
+    {
+        srand(time(0)); // Seed for random number generation
+        while (true)
+        {
+            MainMenu();
+        }
+        return 0;
+    }
+}
